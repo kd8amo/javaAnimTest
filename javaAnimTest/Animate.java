@@ -18,8 +18,7 @@
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
-
-  -- ^^^ MIT license
+i,  -- ^^^ MIT license
   -- quoted sections in comments are from Java 1.6 API
 */
 
@@ -30,29 +29,20 @@ import java.applet.*;
 import java.awt.*;
 import java.net.*;
 import java.util.ArrayList;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.File;
 
 public class Animate extends Applet implements Runnable {
     final int fps = 24;
     Thread animator = null;
     ArrayList<Image> imageList;
     int frameNumber = 0, totalFrames, waitTime;
-    Logger debugLog;
     
     // constructor for applet
     public void init() {
-        debugLog = new Logger("debug.txt");
-        debugLog.writeln("init starting");
-        try {
-            URL imageBase = new URL(getDocumentBase(), "rickroll"); 
-            loadImages(imageBase, "rickroll", "png", 24);
-        } catch (MalformedURLException e) { 
-            debugLog.writeln(e.toString());
-        }
-    }
-
-    // destructor for applet
-    public void destroy() {
-        debugLog.close();
+	loadImages("rickroll", "png", 24);
     }
 
     // executes after init() and also "each time the applet is revisited"
@@ -64,6 +54,7 @@ public class Animate extends Applet implements Runnable {
     // executes "when the Web page that contains this applet has been replaced
     // by another page, and also just before the applet is to be destroyed."
     public void stop() {
+	System.out.printf("stopping\n");
         animator = null;
     }
 
@@ -78,6 +69,7 @@ public class Animate extends Applet implements Runnable {
                 time += waitTime;
                 Thread.sleep(Math.max(0, time - System.currentTimeMillis()));
             } catch (InterruptedException e) { 
+		System.out.printf("breaking loop\n");
                 break;
             }
             // advance the frame number, roll over to 0 at numFrames
@@ -86,28 +78,33 @@ public class Animate extends Applet implements Runnable {
 
     }
 
-    // called on redraw
-    public void paint(Graphics g) {
-        update(g);
-    }
-
     public void update(Graphics g) {
         Dimension dims = getSize();
-        g.setColor(Color.black);
-        g.fillRect(0, 0, dims.width, dims.height);
-        g.drawImage(imageList.get(frameNumber), 0, 0, null);
+        Image img = imageList.get(frameNumber);
+        g.drawImage(img, 0, 0, this);
     }
 
     // load specified series of images into imageList
-    private void loadImages(URL base, String prefix, String extension, 
-                            int numToLoad) {
+    private void loadImages(String prefix, String extension, int numToLoad) {
         imageList = new ArrayList<Image>();
         for (int index = 0; index < numToLoad; index++) {
-            String fileName = prefix + String.valueOf(index) + extension;
-            Image img = getImage(base, fileName);
+	    String fileName = "javaAnimTest\\" + prefix + "\\" + prefix + String.valueOf(index) + "." + extension;
+	    File f = new File(fileName);
+	    if (!f.exists())
+	    {
+		System.out.printf("%s does not exists!!!\n", fileName);
+		System.out.printf("path is %s\n", f.getPath());
+	    }
+	    Image img = null;
+	    try {
+		img = ImageIO.read(f);
+	    } 
+	    catch (IOException e) {
+		    System.out.printf("Caught an error\n");
+	    }
             imageList.add(img);
         }
         totalFrames = numToLoad;
-        waitTime = 1000 * totalFrames / fps;
+        waitTime = 100 * totalFrames / fps;
     }
 }
